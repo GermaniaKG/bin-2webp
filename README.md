@@ -9,15 +9,13 @@ This bash script requires the [cwebp encoding tool](https://developers.google.co
 
 ## Installation
 
-### Homebrew / OSX:
+**Homebrew/OSX:** towebp is available via Germania's [homebrew-images](https://github.com/GermaniaKG/homebrew-images) tap.
 
 ```bash
 $ brew install germaniakg/images/towebp
 ```
 
-### Linux
-
-Clone the repo somewhere. Do not forget to add the **towebp** directory to your local **$PATH** variable.
+**Linux:** Clone the repo somewhere. Do not forget to add the **towebp** directory to your local **$PATH** variable.
 
 ```bash
 $ git clone https://github.com/GermaniaKG/towebp.git towebp
