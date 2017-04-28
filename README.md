@@ -36,10 +36,10 @@ towebp calls `cwebp` with these parameters:
 
 ## Installation
 
-Clone the repo somewhere. Do not forget to add the **bin-towebp** directory to your local **$PATH** variable.
+Clone the repo somewhere. Do not forget to add the **towebp** directory to your local **$PATH** variable.
 
 ```bash
-$ git clone https://github.com/GermaniaKG/bin-2webp.git bin-towebp
+$ git clone https://github.com/GermaniaKG/towebp.git towebp
 ```
 
 
