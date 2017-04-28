@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+# *******************************************************
+#
+#  2webp
+#
+#  Simplifies converting an image to webp,
+#  using default conversion parameters.
+#
+#  Usage:
+#  2webp <inputfile> [quality]
+#
+#  About webp: <https://developers.google.com/speed/webp/>
+#
+#  Author: Carsten Witt <admin@germania-kg.com>
+#
+# *******************************************************
+
+
+# Runtime Environment
+set -o errexit
+set -o nounset
+set -o pipefail
+# set -o xtrace
+
+
+function exit_err {
+	echo >&2 "${@}"; exit 1;
+}
+
+function require  {
+	command -v $1 >/dev/null 2>&1 || exit_err "2webp requires ${1} but it's not installed";
+}
+
+# Requirements
+require cwebp
+
+if [[ $# -eq 0 ]];  then exit_err "Usage: 2webp <inputfile> [quality]"; fi
+
+
+# File name magic
+INPUT_FILE="${1}"
+INPUT_FILE_EXTENSION="${INPUT_FILE##*.}";
+INPUT_FILE_BASENAME="${INPUT_FILE%.$INPUT_FILE_EXTENSION}"
+
+
+# cweb conversion quality
+DEFAULT_QUALITY=85
+QUALITY=${2:-$DEFAULT_QUALITY}
+
+
+# Other cweb parameters
+# See "cwebp -longhelp" for a full-list
+WEBP_ALPHA_CLEANUP="on"
+
+
+# Do business
+printf "Convert to Webp, quality ${QUALITY}: ${INPUT_FILE} ... "
+cwebp -alpha_cleanup "${WEBP_ALPHA_CLEANUP}" -quiet -q "${QUALITY}" "${INPUT_FILE}" -o "${INPUT_FILE_BASENAME}.webp"
+
+CWEBP_EXIT_CODE=$?
+if [ "${CWEBP_EXIT_CODE}" -eq 0 ]; then echo "Done."; fi
+
+exit $CWEBP_EXIT_CODE
+
