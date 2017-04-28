@@ -7,7 +7,21 @@
 ## Requirements
 This bash script requires the [cwebp encoding tool](https://developers.google.com/speed/webp/docs/cwebp). For information about webp, see Google's article [“A new image format for the Web”](https://developers.google.com/speed/webp/) and their [webp encoding guide](https://developers.google.com/speed/webp/docs/cwebp)
 
+## Installation
 
+### Homebrew / OSX:
+
+```bash
+$ brew install germaniakg/images/towebp
+```
+
+### Linux
+
+Clone the repo somewhere. Do not forget to add the **towebp** directory to your local **$PATH** variable.
+
+```bash
+$ git clone https://github.com/GermaniaKG/towebp.git towebp
+```
 
 ## Usage
 
@@ -34,13 +48,7 @@ towebp calls `cwebp` with these parameters:
 - `-q 85` or, the quality factor passed, respectively
 
 
-## Installation
 
-Clone the repo somewhere. Do not forget to add the **towebp** directory to your local **$PATH** variable.
-
-```bash
-$ git clone https://github.com/GermaniaKG/towebp.git towebp
-```
 
 
 
