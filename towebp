@@ -8,7 +8,7 @@
 #  using default conversion parameters.
 #
 #  Usage:
-#  2webp <inputfile> [quality]
+#  towebp <inputfile> [quality]
 #
 #  About webp: <https://developers.google.com/speed/webp/>
 #
@@ -29,13 +29,13 @@ function exit_err {
 }
 
 function require  {
-	command -v $1 >/dev/null 2>&1 || exit_err "2webp requires ${1} but it's not installed";
+	command -v $1 >/dev/null 2>&1 || exit_err "towebp requires ${1} but it's not installed";
 }
 
 # Requirements
 require cwebp
 
-if [[ $# -eq 0 ]];  then exit_err "Usage: 2webp <inputfile> [quality]"; fi
+if [[ $# -eq 0 ]];  then exit_err "Usage: towebp <inputfile> [quality]"; fi
 
 
 # File name magic
