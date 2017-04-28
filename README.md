@@ -39,7 +39,7 @@ towebp calls `cwebp` with these parameters:
 Clone the repo somewhere. Do not forget to add the **bin-towebp** directory to your local **$PATH** variable.
 
 ```bash
-$ git clone https://github.com/GermaniaKG/bin-towebp.git bin-towebp
+$ git clone https://github.com/GermaniaKG/bin-2webp.git bin-towebp
 ```
 
 
