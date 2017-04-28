@@ -1,5 +1,5 @@
 
-# 2webp
+# towebp
 
 **Just a simplifying wrapper around [Google's cwebp command](https://developers.google.com/speed/webp/docs/cwebp)**
 
@@ -14,20 +14,20 @@ This bash script requires the [cwebp encoding tool](https://developers.google.co
 Pass an input file and optionally a quality parameter:
 
 ```bash
-$ 2webp <image>
-$ 2webp <image> [quality]
+$ towebp <image>
+$ towebp <image> [quality]
 ```
 
 ### Example
 
 ```bash
-$ 2webp photo.jpg
-$ 2webp photo.jpg 75
+$ towebp photo.jpg
+$ towebp photo.jpg 75
 ```
 
 ## What happens inside?
 
-2webp calls `cwebp` with these parameters:
+towebp calls `cwebp` with these parameters:
 
 - `-quiet`
 - `-alpha_cleanup on`
@@ -36,10 +36,10 @@ $ 2webp photo.jpg 75
 
 ## Installation
 
-Clone the repo somewhere. Do not forget to add the **bin-2webp** directory to your local **$PATH** variable.
+Clone the repo somewhere. Do not forget to add the **bin-towebp** directory to your local **$PATH** variable.
 
 ```bash
-$ git clone https://github.com/GermaniaKG/bin-2webp.git bin-2webp
+$ git clone https://github.com/GermaniaKG/bin-towebp.git bin-towebp
 ```
 
 
