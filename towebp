@@ -18,48 +18,319 @@
 
 
 # Runtime Environment
-set -o errexit
 set -o nounset
 set -o pipefail
+
+# Not needed here since we evaluate the result of "cp" command.
+# set -o errexit
+
+# May be useful one day
 # set -o xtrace
 
 
-function exit_err {
-	echo >&2 "${@}"; exit 1;
+
+# --------------------------------------
+# Output and formatting functions
+# --------------------------------------
+
+# Formatting stuff
+readonly C_RED='\033[0;31m'
+readonly C_GREEN='\033[0;32m'
+readonly C_ORANGE=$(tput setaf 3)
+readonly NC='\033[0m' # No Color
+
+
+# Error message and error exit, redirecting stdout to stderr
+function e_error {
+	echo -e >&2 "${C_RED}✘ Error:${NC} ${*-}";
+	exit 1;
 }
 
-function require  {
-	command -v $1 >/dev/null 2>&1 || exit_err "towebp requires ${1} but it's not installed";
+function e_warning {
+  echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
 }
+
+function e_success () {
+  echo -e "${C_GREEN}✔ Success:${NC} ${*-}"
+}
+
+
+# --------------------------------------
+# Requirements
+# --------------------------------------
+
+function require  {
+	command -v "${1}" >/dev/null 2>&1 || e_error "$(printf "Program '%s' required, but it's not installed" "${1}")"
+}
+
 
 # Requirements
 require cwebp
-
-if [[ $# -eq 0 ]];  then exit_err "Usage: towebp <inputfile> [quality]"; fi
-
-
-# File name magic
-INPUT_FILE="${1}"
-INPUT_FILE_EXTENSION="${INPUT_FILE##*.}";
-INPUT_FILE_BASENAME="${INPUT_FILE%.$INPUT_FILE_EXTENSION}"
+require du
+require cut
 
 
-# cweb conversion quality
-DEFAULT_QUALITY=85
-QUALITY=${2:-$DEFAULT_QUALITY}
+# ---------------------------------------
+# Print short help if no arguments
+# ---------------------------------------
+
+readonly SCRIPT_NAME=$(basename "${0}")
+
+if [ "$#" -eq 0 ]; then
+	echo "Usage: ${SCRIPT_NAME} [ -q quality ] file1 [ file2 ... ]"
+	exit 1
+fi
+
+
+
+
+
+# --------------------------------------
+# Configuration
+# --------------------------------------
+
+# Wether to overwrite existing output files
+declare -i overwrite_output=0
+
+# Keeps anything that does not look like an option,
+# and thus considered input file.
+declare -a source_image_array
+
+
+# List of possible script arguments (getopts)
+# Very much like getopts, expected short options should be appended to the
+# string here. Any option followed by a ':' takes a required argument.
+readonly OPTIONS_LIST="q:"
+
+
+# Define cwebp's conversion quality
+declare -i ouput_quality_default=85
+declare -i output_quality=$ouput_quality_default
 
 
 # Other cweb parameters
 # See "cwebp -longhelp" for a full-list
-WEBP_ALPHA_CLEANUP="on"
+webp_alpha_cleanup="on"
 
 
-# Do business
-printf "Convert to Webp, quality ${QUALITY}: ${INPUT_FILE} ... "
-cwebp -alpha_cleanup "${WEBP_ALPHA_CLEANUP}" -quiet -q "${QUALITY}" "${INPUT_FILE}" -o "${INPUT_FILE_BASENAME}.webp"
 
-CWEBP_EXIT_CODE=$?
-if [ "${CWEBP_EXIT_CODE}" -eq 0 ]; then echo "Done."; fi
 
-exit $CWEBP_EXIT_CODE
+
+
+
+# ======================================
+#  Options parsing
+# ======================================
+
+# --------------------------------------
+# _require_argument()
+#
+# Usage:
+#   _require_argument <option> <argument>
+#
+# If <argument> is blank or another option, print an error message
+#
+# This function is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+# --------------------------------------
+
+_require_argument() {
+    # Set local variables from arguments.
+    #
+    # NOTE: 'local' is a non-POSIX bash feature and keeps the variable local to
+    # the block of code, as defined by curly braces. It's easiest to just think
+    # of them as local to a function.
+    local _option="${1:-}"
+    local _argument="${2:-}"
+
+    if [[ -z "${_argument}" ]] || [[ "${_argument}" =~ ^- ]]
+    then
+        e_error "$(printf "Option requires a argument: %s\n" "${_option}")"
+    fi
+}
+
+
+# ---------------------------------------
+# Normalize options
+#
+# This section is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+# ---------------------------------------
+
+# iterate over options, breaking -ab into -a -b and --foo=bar into --foo bar
+# also turns -- into --endopts to avoid issues with things like '-o-', the '-'
+# should not indicate the end of options, but be an invalid option (or the
+# argument to the option, such as wget -qO-)
+unset options
+# while the number of arguments is greater than 0
+while ((${#}))
+do
+  case ${1} in
+    # if option is of type -ab
+    -[!-]?*)
+      # loop over each character starting with the second
+      for ((i=1; i<${#1}; i++))
+      do
+        # extract 1 character from position 'i'
+        c=${1:i:1}
+        # add current char to options
+        options+=("-${c}")
+
+        # if option takes a required argument, and it's not the last char
+        # make the rest of the string its argument
+        if [[ ${OPTIONS_LIST} = *"${c}:"* && ${1:i+1} ]]
+        then
+          options+=("${1:i+1}")
+          break
+        fi
+      done
+      ;;
+    # if option is of type --foo=bar, split on first '='
+    --?*=*)
+      options+=("${1%%=*}" "${1#*=}")
+      ;;
+    # end of options, stop breaking them up
+    --)
+      options+=(--endopts)
+      shift
+      options+=("${@}")
+      break
+      ;;
+    # otherwise, nothing special
+    *)
+      options+=("${1}")
+      ;;
+  esac
+
+  shift
+done
+# set new positional parameters to altered options. Set default to blank.
+set -- "${options[@]:-}"
+unset options
+
+
+
+
+# ---------------------------------------
+# Parse Options
+# ---------------------------------------
+
+# getopts and getopts have inconsistent behavior, so using a simple home-brewed
+# while loop. This isn't perfectly compliant with POSIX, but it's close enough
+# and this appears to be a widely used approach.
+#
+# More info:
+#   http://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html
+#   http://stackoverflow.com/a/14203146
+#   http://stackoverflow.com/a/7948533
+#
+# This section is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+while [ ${#} -gt 0 ]
+do
+    __option="${1:-}"
+    __maybe_param="${2:-}"
+
+    case "${__option}" in
+        # For a later release...
+
+        # --force)
+        #     overwrite_output=1
+        #     ;;
+
+        -q|--quality)
+            _require_argument "${__option}" "${__maybe_param}"
+            output_quality="${__maybe_param}"
+            recursion_arguments_array+=(${__option} "${__maybe_param}")
+            shift
+            ;;
+
+        --endopts)
+            # Terminate option parsing.
+            break
+            ;;
+        -*)
+            # Assume option because of leading "-"
+            e_error "$(printf "Unexpected option: %s\n" "${__option}")"
+            ;;
+        *)
+            # "Anything else must be an image parameter"
+            # This is a WORKAROUND, as without this "*)" block any given image parameters
+            # after the arguments seem to get lost (i.e., stuck in last $__option checked).
+            source_image_array+=("${__option}")
+            ;;
+    esac
+    shift
+
+done
+
+
+
+# ======================================
+#  The business part
+# ======================================
+
+
+
+
+# --------------------------------------
+#  Create conversion settings
+#  from settings and options.
+# --------------------------------------
+
+# Parameters for calling convert.
+declare -a convert_options_array=()
+
+convert_options_array+=( "-alpha_cleanup" "${webp_alpha_cleanup}" )
+convert_options_array+=( -quiet)
+convert_options_array+=( -q "${output_quality}" )
+
+
+# --------------------------------------
+#  The main procedure
+# --------------------------------------
+
+function main {
+
+	input_file="${1}"
+
+	# Just in case $INPUT_FILE is NOT a regular file
+	if [ ! -f "${input_file}" ]; then
+		e_warning "$(printf '"%s" is not a regular file. Ignoring.' "${input_file}")"
+		exit 1
+	fi
+
+	# File name magic
+	input_file_extension="${input_file##*.}";
+	input_file_basename="${input_file%.$input_file_extension}"
+
+	target_file="${input_file_basename}.webp"
+
+
+	# Do business
+	cwebp "${convert_options_array[@]}" "${input_file}" -o "${target_file}"
+
+	# Evaluate
+	cwebp_exit_code=$?
+	if [ "${cwebp_exit_code}" -eq 0 ]; then
+		input_size_kb="$(du -k "${input_file}" | cut -f1)"
+		output_size_kb="$(du -k "${target_file}" | cut -f1)"
+		e_success "$(printf "%s (%skB) → %s (%skB, quality %s)" "${input_file}" "${input_size_kb}" "${target_file}" "${output_size_kb}" "${output_quality}")"
+	else
+		e_error "$(printf "Could not convert %s. Ignored." "${input_file}")"
+	fi
+
+	# exit $cwebp_exit_code
+}
+
+
+# --------------------------------------
+# Loop over each argument
+# --------------------------------------
+
+for var in "${source_image_array[@]}"
+do
+	main "${var}"
+done
+
 

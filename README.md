@@ -26,15 +26,16 @@ $ git clone https://github.com/GermaniaKG/towebp.git towebp
 Pass an input file and optionally a quality parameter:
 
 ```bash
-$ towebp <image>
-$ towebp <image> [quality]
+$ towebp <images>
+$ towebp *.jpg
+$ towebp --quality 60 <images>
 ```
 
-### Example
+### Examples
 
 ```bash
 $ towebp photo.jpg
-$ towebp photo.jpg 75
+$ towebp -q 60 photo.jpg file2.jpg
 ```
 
 ## What happens inside?
