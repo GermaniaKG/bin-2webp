@@ -1,5 +1,5 @@
 
-# towebp
+# Germania KG · towebp
 
 **Just a simplifying wrapper around [Google's cwebp command](https://developers.google.com/speed/webp/docs/cwebp)**
 
