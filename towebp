@@ -36,6 +36,7 @@ set -o pipefail
 # Formatting stuff
 readonly C_RED='\033[0;31m'
 readonly C_GREEN='\033[0;32m'
+readonly C_GRAY='\033[1;30m'
 readonly C_ORANGE=$(tput setaf 3)
 readonly NC='\033[0m' # No Color
 
@@ -48,6 +49,10 @@ function e_error {
 
 function e_warning {
   echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
+}
+
+function e_ignore {
+  echo -e "${C_GRAY}❱ Ignoring:${NC} ${*-}"
 }
 
 function e_success () {
@@ -306,9 +311,10 @@ function main {
 
 	target_file="${input_file_basename}.webp"
 
+
 	# Do nothing if a matching webp output file exists
 	if [ -f "${target_file}" ]; then
-		e_warning "$(printf '"%s" has webp companion. Ignoring.' "${input_file}")"
+		e_ignore "$(printf '"%s" has webp companion.' "${input_file}")"
 		exit 1
 	fi
 
