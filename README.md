@@ -23,13 +23,23 @@ $ git clone https://github.com/GermaniaKG/towebp.git towebp
 
 ## Usage
 
-Pass an input file and optionally a quality parameter:
+Pass an input file and optionally a quality parameter. If the input already has a *webp* companion, it will be silently ignored. Turn on `--verbous` mode to see what's going on.
 
 ```bash
 $ towebp <images>
 $ towebp *.jpg
 $ towebp --quality 60 <images>
 ```
+
+### Options
+
+Option | Description
+:------|:---------------
+`-f` `--force`       | Overwrite existing webp files
+`-q` `--quality`     | Quality factor, default 85
+`-v` `--verbous`     | Turn on verbous mode.
+
+
 
 ### Examples
 

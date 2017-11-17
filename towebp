@@ -36,6 +36,7 @@ set -o pipefail
 # Formatting stuff
 readonly C_RED='\033[0;31m'
 readonly C_GREEN='\033[0;32m'
+readonly C_GRAY='\033[1;30m'
 readonly C_ORANGE=$(tput setaf 3)
 readonly NC='\033[0m' # No Color
 
@@ -48,6 +49,12 @@ function e_error {
 
 function e_warning {
   echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
+}
+
+function e_ignore {
+	if [ $verbous_output -gt 0 ]; then
+  		echo -e "${C_GRAY}❱ Ignoring:${NC} ${*-}"
+  	fi
 }
 
 function e_success () {
@@ -77,7 +84,7 @@ require cut
 readonly SCRIPT_NAME=$(basename "${0}")
 
 if [ "$#" -eq 0 ]; then
-	echo "Usage: ${SCRIPT_NAME} [ -q quality ] file1 [ file2 ... ]"
+	echo "Usage: ${SCRIPT_NAME} [ -v ] [ -q quality ] file1 [ file2 ... ]"
 	exit 1
 fi
 
@@ -88,6 +95,9 @@ fi
 # --------------------------------------
 # Configuration
 # --------------------------------------
+
+# Turn on verbous output
+declare -i verbous_output=0
 
 # Wether to overwrite existing output files
 declare -i overwrite_output=0
@@ -234,9 +244,13 @@ do
     case "${__option}" in
         # For a later release...
 
-        # --force)
-        #     overwrite_output=1
-        #     ;;
+        -f|--force)
+             overwrite_output=1
+             ;;
+
+        -v|--verbous)
+             verbous_output=1
+             ;;
 
         -q|--quality)
             _require_argument "${__option}" "${__maybe_param}"
@@ -307,6 +321,13 @@ function main {
 	target_file="${input_file_basename}.webp"
 
 
+	# Do nothing if a matching webp output file exists
+	if  [ $overwrite_output -eq 0 ] && [ -f "${target_file}" ]; then
+		e_ignore "$(printf "webp companion exists: '%s'" "${input_file}")"
+		exit 1
+	fi
+
+
 	# Do business
 	cwebp "${convert_options_array[@]}" "${input_file}" -o "${target_file}"
 
@@ -315,7 +336,12 @@ function main {
 	if [ "${cwebp_exit_code}" -eq 0 ]; then
 		input_size_kb="$(du -k "${input_file}" | cut -f1)"
 		output_size_kb="$(du -k "${target_file}" | cut -f1)"
-		e_success "$(printf "%s (%skB) → %s (%skB, quality %s)" "${input_file}" "${input_size_kb}" "${target_file}" "${output_size_kb}" "${output_quality}")"
+
+		if [ $verbous_output -gt 0 ]; then
+			e_success "$(printf "%s (%skB) → %s (%skB, quality %s)" "${input_file}" "${input_size_kb}" "${target_file}" "${output_size_kb}" "${output_quality}")"
+		else
+			e_success "$(printf "%s  →  original: %skB, webp: %skB, quality %s" "${input_file}" "${input_size_kb}" "${output_size_kb}" "${output_quality}")"
+		fi
 	else
 		e_error "$(printf "Could not convert %s. Ignored." "${input_file}")"
 	fi
