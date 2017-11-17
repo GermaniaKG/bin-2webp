@@ -324,7 +324,7 @@ function main {
 	# Do nothing if a matching webp output file exists
 	if  [ $overwrite_output -eq 0 ] && [ -f "${target_file}" ]; then
 		e_ignore "$(printf "webp companion exists: '%s'" "${input_file}")"
-		exit 1
+		exit 0
 	fi
 
 
