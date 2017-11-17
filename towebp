@@ -306,6 +306,12 @@ function main {
 
 	target_file="${input_file_basename}.webp"
 
+	# Do nothing if a matching webp output file exists
+	if [ -f "${target_file}" ]; then
+		e_warning "$(printf '"%s" has webp companion. Ignoring.' "${input_file}")"
+		exit 1
+	fi
+
 
 	# Do business
 	cwebp "${convert_options_array[@]}" "${input_file}" -o "${target_file}"
