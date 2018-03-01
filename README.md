@@ -50,7 +50,9 @@ $ towebp -q 60 photo.jpg file2.jpg
 
 ## What happens inside?
 
-towebp calls `cwebp` with these parameters:
+First, *towebp* checks if there is a webp companion already. If so, the conversion will be skipped unless the original file is newer or `--force` option is set.
+
+Second, *towebp* calls `cwebp` with these parameters:
 
 - `-quiet`
 - `-alpha_cleanup on`
